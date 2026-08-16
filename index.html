@@ -3,91 +3,54 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Alliance Ops — fair event rosters</title>
+    <title>Game Ops Desk — one clear tool per game</title>
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
     <main>
       <header class="topbar">
-        <a class="brand" href="#">Alliance Ops <span>prototype</span></a>
-        <label class="game-picker">Game template<select id="game"><option value="last_war">Last War</option><option value="rise_of_kingdoms">Rise of Kingdoms</option></select></label>
+        <a class="brand" href="./">Game Ops Desk <span>fan-made tools</span></a>
+        <span class="muted">Choose the game first. No mixed promises.</span>
       </header>
 
-      <section class="hero">
+      <section class="hero hub-hero">
         <div class="hero-copy">
-          <span class="eyebrow">Built for Last War R4/R5 officers</span>
-          <h1>Build a fair Desert Storm roster in 30 seconds.</h1>
-          <p class="hero-lead">Turn member availability into 20 starters and 10 substitutes—then carry attendance and no-shows into the next round automatically.</p>
-          <div class="hero-actions">
-            <button id="try-demo">Try the 50-member demo</button>
-            <button id="open-setup" class="secondary">Use my own roster</button>
-          </div>
-          <p class="trust-line">No login · No bot install · No game account access · Data stays in this browser</p>
+          <span class="eyebrow">Separate game, separate job</span>
+          <h1>Pick the exact tool your community needs.</h1>
+          <p class="hero-lead">KingShot gets a simple redemption-code desk. Last War and Rise of Kingdoms get event-roster operations. Nothing is presented as a native game integration.</p>
         </div>
-        <aside class="outcome-card" aria-label="Demo outcome">
-          <span class="eyebrow">One workflow, three outcomes</span>
-          <div class="outcome-stat"><strong>50</strong><span>members considered</span></div>
-          <div class="outcome-stat"><strong>20 + 10</strong><span>starters and substitutes</span></div>
-          <div class="outcome-stat"><strong>Round 7</strong><span>history preserved for fair rotation</span></div>
+        <aside class="outcome-card">
+          <span class="eyebrow">Clear boundaries</span>
+          <div class="outcome-stat"><strong>0</strong><span>game logins requested</span></div>
+          <div class="outcome-stat"><strong>0</strong><span>Discord bots required</span></div>
+          <div class="outcome-stat"><strong>1</strong><span>job per game page</span></div>
         </aside>
       </section>
 
-      <section class="toolbar" id="workflow">
-        <div><span class="eyebrow">Active template</span><h2 id="event-title"></h2></div>
-        <div class="actions"><button id="generate">Generate fair roster</button><button id="attendance" class="secondary" disabled>Record attendance</button><button id="reset-state" class="danger">Clear local data</button></div>
-      </section>
-
-      <div id="storage-status" class="muted storage-status" role="status" aria-live="polite"></div>
-
-      <section class="layout" id="roster-workspace">
-        <article class="panel signups">
-        <div class="panel-title"><div><span class="eyebrow">Step 1</span><h2>Availability</h2></div><span class="muted">Browser-local roster</span></div>
-          <div class="table-wrap"><table><thead><tr><th>In</th><th>Member</th><th>Power</th><th>Roles</th><th>Picked</th><th>No-show</th></tr></thead><tbody id="signup-body"></tbody></table></div>
+      <section class="product-grid" aria-label="Game tools">
+        <article class="product-card kingshot-card">
+          <span class="product-tag">FREE COMMUNITY UTILITY</span>
+          <h2>KingShot Redemption Codes</h2>
+          <p>Verified code posts and official redemption instructions. No roster tool, bulk redemption, player IDs, or automation.</p>
+          <a class="button-link" href="./kingshot.html">Open KingShot code desk</a>
         </article>
-        <article class="panel" id="roster-panel"></article>
+
+        <article class="product-card">
+          <span class="product-tag">ALLIANCE EVENT OPS</span>
+          <h2>Last War · Desert Storm</h2>
+          <p>Turn availability into 20 starters and 10 substitutes, then preserve attendance history for the next round.</p>
+          <a class="button-link" href="./game.html?game=last_war">Open Last War demo</a>
+        </article>
+
+        <article class="product-card">
+          <span class="product-tag">ALLIANCE EVENT OPS</span>
+          <h2>Rise of Kingdoms · Ark of Osiris</h2>
+          <p>Build a 30-player roster with rally, garrison, and field roles. Substitute count remains visibly marked as an estimate.</p>
+          <a class="button-link" href="./game.html?game=rise_of_kingdoms">Open RoK demo</a>
+        </article>
       </section>
 
-      <details class="advanced-panel" id="advanced-setup">
-        <summary><span><strong>Advanced operator setup</strong><small>Collect responses, tune roles, or import your roster</small></span></summary>
-        <details class="data-panel intake-panel">
-          <summary>Collect member availability</summary>
-          <p>Create a one-line response slip for a member, then paste collected slips into the officer box. Slips are round- and game-specific but not identity-authenticated; the officer must review them.</p>
-          <div class="intake-grid">
-            <section>
-              <h3>Member · create response</h3>
-              <div class="field-row">
-                <label>Member<select id="response-member" aria-label="Response member"></select></label>
-                <label>Availability<select id="response-availability" aria-label="Response availability"><option value="in">Available</option><option value="out">Unavailable</option></select></label>
-              </div>
-              <button id="create-response" class="secondary">Create response slip</button>
-              <textarea id="response-output" readonly spellcheck="false" aria-label="Generated response slip"></textarea>
-            </section>
-            <section>
-              <h3>Officer · apply responses</h3>
-              <textarea id="response-batch" spellcheck="false" aria-label="Collected response slips" placeholder="Paste one AO1 response slip per line"></textarea>
-              <div class="data-actions"><button id="apply-responses">Apply responses</button><button id="clear-availability" class="secondary">Clear availability</button></div>
-            </section>
-          </div>
-          <div id="intake-status" class="muted inline-status" role="status" aria-live="polite"></div>
-        </details>
-
-        <details class="data-panel role-policy-panel">
-          <summary>Set required roles</summary>
-          <p>Set the minimum main-roster seats for each role. Event capacity and substitute limits stay fixed.</p>
-          <div id="role-policy-fields" class="role-policy-fields"></div>
-          <div class="data-actions"><button id="apply-role-policy">Save role policy</button><button id="reset-role-policy" class="secondary">Restore template defaults</button><span id="role-policy-status" class="muted inline-status" role="status" aria-live="polite"></span></div>
-        </details>
-
-        <details class="data-panel" id="roster-import">
-          <summary>Import or export a roster CSV</summary>
-          <p>Required columns: <code>id,name</code>. Roles use <code>|</code>, for example <code>rally_lead|defense</code>.</p>
-          <textarea id="csv-input" spellcheck="false" aria-label="Roster CSV"></textarea>
-          <div class="data-actions"><button id="import-csv">Import CSV</button><button id="export-csv" class="secondary">Export CSV</button><button id="load-sample" class="secondary">Reset to sample</button><span id="csv-status" class="muted inline-status"></span></div>
-        </details>
-      </details>
-
-      <footer>Fan-made workflow prototype · No Discord token · No game API · No account access</footer>
+      <footer>Fan-made tools · No official partnership claim · No game API · No account access</footer>
     </main>
-    <script type="module" src="./app.mjs"></script>
   </body>
 </html>

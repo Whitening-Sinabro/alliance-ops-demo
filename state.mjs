@@ -1,5 +1,5 @@
 import { GAME_TEMPLATES } from "./engine.mjs";
-import { defaultRolePolicies, validateRolePolicies } from "./policy.mjs";
+import { defaultEventSettings, defaultRolePolicies, validateEventSettings, validateRolePolicies } from "./policy.mjs";
 
 export const STORAGE_KEY = "alliance-ops-demo-state-v1";
 export const STATE_SCHEMA = 1;
@@ -66,7 +66,8 @@ export function validateState(value) {
   const memberIds = new Set(ids);
   const availabilityIds = validateMemberIds(value.availabilityIds, "availabilityIds", memberIds, ids);
   const respondedIds = validateMemberIds(value.respondedIds, "respondedIds", memberIds, []);
-  const rolePolicies = validateRolePolicies(value.rolePolicies, GAME_TEMPLATES);
+  const eventSettings = validateEventSettings(value.eventSettings, GAME_TEMPLATES);
+  const rolePolicies = validateRolePolicies(value.rolePolicies, GAME_TEMPLATES, eventSettings);
   return structuredClone({
     schema: STATE_SCHEMA,
     round: value.round,
@@ -74,6 +75,7 @@ export function validateState(value) {
     availabilityIds,
     respondedIds,
     rolePolicies,
+    eventSettings,
   });
 }
 
@@ -84,6 +86,7 @@ export function loadState(storage) {
     availabilityIds: [],
     respondedIds: [],
     rolePolicies: defaultRolePolicies(GAME_TEMPLATES),
+    eventSettings: defaultEventSettings(GAME_TEMPLATES),
   });
   if (!storage) return { status: "unavailable", ...empty() };
   try {
@@ -97,16 +100,17 @@ export function loadState(storage) {
       availabilityIds: state.availabilityIds,
       respondedIds: state.respondedIds,
       rolePolicies: state.rolePolicies,
+      eventSettings: state.eventSettings,
     };
   } catch (error) {
     return { status: "invalid", ...empty(), error: error.message };
   }
 }
 
-export function saveState(storage, { members, round, availabilityIds, respondedIds, rolePolicies }) {
+export function saveState(storage, { members, round, availabilityIds, respondedIds, rolePolicies, eventSettings }) {
   if (!storage) return { ok: false, error: "Browser storage is unavailable." };
   try {
-    const state = validateState({ schema: STATE_SCHEMA, members, round, availabilityIds, respondedIds, rolePolicies });
+    const state = validateState({ schema: STATE_SCHEMA, members, round, availabilityIds, respondedIds, rolePolicies, eventSettings });
     storage.setItem(STORAGE_KEY, JSON.stringify(state));
     return { ok: true };
   } catch (error) {
