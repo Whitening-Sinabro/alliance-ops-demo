@@ -7,6 +7,9 @@ A dependency-free game-specific hub. KingShot is a simple redemption-code desk w
 - `/` — game/product chooser.
 - `/kingshot.html` — codes and official redemption instructions only.
 - `/tournament.html` — cross-game community tournament check-in and room-assignment demo.
+- `/onboarding.html` — cross-game clan/community application and invitation pipeline.
+- `/audit.html` — officer-reviewed clan participation audit demo.
+- `/integration-repair.html` — fixed-scope Sheet/API workflow repair service page.
 - `/game.html?game=last_war` — Last War event-roster demo.
 - `/game.html?game=rise_of_kingdoms` — Rise of Kingdoms event-roster demo.
 
