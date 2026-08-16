@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Alliance Ops — local prototype</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <span class="eyebrow">Local synthetic prototype</span>
+          <h1>Alliance Ops</h1>
+          <p>Fair event rotation without game access, credentials, or scraping.</p>
+        </div>
+        <label class="game-picker">Game template<select id="game"><option value="last_war">Last War</option><option value="rise_of_kingdoms">Rise of Kingdoms</option></select></label>
+      </header>
+
+      <section class="toolbar">
+        <div><span class="eyebrow">Active template</span><h2 id="event-title"></h2></div>
+        <div class="actions"><button id="generate">Generate fair roster</button><button id="attendance" class="secondary" disabled>Record attendance</button><button id="reset-state" class="danger">Clear local data</button></div>
+      </section>
+
+      <div id="storage-status" class="muted storage-status" role="status" aria-live="polite"></div>
+
+      <details class="data-panel intake-panel" open>
+        <summary>Member response intake</summary>
+        <p>Create a one-line response slip for a member, then paste collected slips into the officer box. Slips are round- and game-specific but not identity-authenticated; the officer must review them.</p>
+        <div class="intake-grid">
+          <section>
+            <h3>Member · create response</h3>
+            <div class="field-row">
+              <label>Member<select id="response-member" aria-label="Response member"></select></label>
+              <label>Availability<select id="response-availability" aria-label="Response availability"><option value="in">Available</option><option value="out">Unavailable</option></select></label>
+            </div>
+            <button id="create-response" class="secondary">Create response slip</button>
+            <textarea id="response-output" readonly spellcheck="false" aria-label="Generated response slip"></textarea>
+          </section>
+          <section>
+            <h3>Officer · apply responses</h3>
+            <textarea id="response-batch" spellcheck="false" aria-label="Collected response slips" placeholder="Paste one AO1 response slip per line"></textarea>
+            <div class="data-actions"><button id="apply-responses">Apply responses</button><button id="clear-availability" class="secondary">Clear availability</button></div>
+          </section>
+        </div>
+        <div id="intake-status" class="muted inline-status" role="status" aria-live="polite"></div>
+      </details>
+
+      <details class="data-panel role-policy-panel">
+        <summary>Required-role policy</summary>
+        <p>Set the minimum main-roster seats for each role. Event capacity and substitute limits stay fixed.</p>
+        <div id="role-policy-fields" class="role-policy-fields"></div>
+        <div class="data-actions"><button id="apply-role-policy">Save role policy</button><button id="reset-role-policy" class="secondary">Restore template defaults</button><span id="role-policy-status" class="muted inline-status" role="status" aria-live="polite"></span></div>
+      </details>
+
+      <details class="data-panel">
+        <summary>Roster CSV import / export</summary>
+        <p>Required columns: <code>id,name</code>. Roles use <code>|</code>, for example <code>rally_lead|defense</code>.</p>
+        <textarea id="csv-input" spellcheck="false" aria-label="Roster CSV"></textarea>
+        <div class="data-actions"><button id="import-csv">Import CSV</button><button id="export-csv" class="secondary">Export CSV</button><button id="load-sample" class="secondary">Restore sample</button><span id="csv-status" class="muted inline-status"></span></div>
+      </details>
+
+      <section class="layout">
+        <article class="panel signups">
+        <div class="panel-title"><div><span class="eyebrow">Step 1</span><h2>Availability</h2></div><span class="muted">Browser-local roster</span></div>
+          <div class="table-wrap"><table><thead><tr><th>In</th><th>Member</th><th>Power</th><th>Roles</th><th>Picked</th><th>No-show</th></tr></thead><tbody id="signup-body"></tbody></table></div>
+        </article>
+        <article class="panel" id="roster-panel"></article>
+      </section>
+
+      <footer>No Discord token · No game API · No account access · No external requests</footer>
+    </main>
+    <script type="module" src="./app.mjs"></script>
+  </body>
+</html>
