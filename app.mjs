@@ -1,7 +1,7 @@
 import { GAME_TEMPLATES, applyAttendance, buildRoster, explainPriority, formatRosterAnnouncement } from "./engine.mjs";
 import { parseRosterCsv, serializeRosterCsv } from "./csv.mjs";
 import { applyResponseSlips, createResponseSlip, parseResponseSlips } from "./intake.mjs";
-import { defaultRolePolicies, requiredRolesFor, validateRolePolicies } from "./policy.mjs";
+import { configuredTemplate, defaultEventSettings, defaultRolePolicies, requiredRolesFor, validateEventSettings, validateRolePolicies } from "./policy.mjs";
 import { EMPTY_ROUND, clearState, loadState, saveState } from "./state.mjs";
 
 const SAMPLE_ROUND = 6;
@@ -20,6 +20,7 @@ const sampleMembers = sampleNames.map((name, index) => {
   if (index % 3 === 0) roles.push("defense");
   if (index % 7 === 1) roles.push("garrison");
   if (index % 2 === 0) roles.push("field");
+  if (index % 5 === 0) roles.push("support");
   const selectionCount = index % 4;
   return {
     id: `m${index + 1}`,
@@ -46,11 +47,14 @@ let members = restoredState.members;
 let availabilityIds = new Set(restoredState.availabilityIds);
 let respondedIds = new Set(restoredState.respondedIds);
 let rolePolicies = restoredState.rolePolicies;
+let eventSettings = restoredState.eventSettings;
 
 let currentRoster = null;
 let round = restoredState.round;
 
 const gameSelect = document.querySelector("#game");
+const requestedGame = new URLSearchParams(window.location.search).get("game");
+if (requestedGame && GAME_TEMPLATES[requestedGame]) gameSelect.value = requestedGame;
 const eventTitle = document.querySelector("#event-title");
 const signupBody = document.querySelector("#signup-body");
 const rosterPanel = document.querySelector("#roster-panel");
@@ -80,6 +84,16 @@ const openSetupButton = document.querySelector("#open-setup");
 const advancedSetup = document.querySelector("#advanced-setup");
 const rosterImport = document.querySelector("#roster-import");
 const rosterWorkspace = document.querySelector("#roster-workspace");
+const eventPolicyFields = document.querySelector("#event-policy-fields");
+const applyEventPolicyButton = document.querySelector("#apply-event-policy");
+const resetEventPolicyButton = document.querySelector("#reset-event-policy");
+const eventPolicyStatus = document.querySelector("#event-policy-status");
+const heroEyebrow = document.querySelector("#hero-eyebrow");
+const heroTitle = document.querySelector("#hero-title");
+const heroLead = document.querySelector("#hero-lead");
+const outcomeMembers = document.querySelector("#outcome-members");
+const outcomeCapacity = document.querySelector("#outcome-capacity");
+const outcomeRound = document.querySelector("#outcome-round");
 
 function showStorageStatus(message, kind = "muted") {
   storageStatus.textContent = message;
@@ -93,6 +107,7 @@ function persistState(message) {
     availabilityIds: [...availabilityIds],
     respondedIds: [...respondedIds],
     rolePolicies,
+    eventSettings,
   });
   if (result.ok) {
     showStorageStatus(message ?? `Saved round ${round} · ${members.length} members.`, "success");
@@ -103,7 +118,17 @@ function persistState(message) {
 }
 
 function currentTemplate() {
-  return GAME_TEMPLATES[gameSelect.value];
+  return configuredTemplate(GAME_TEMPLATES[gameSelect.value], eventSettings[gameSelect.value]);
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[character]);
 }
 
 function roleLabels() {
@@ -175,6 +200,49 @@ function renderRolePolicy(message, kind = "muted") {
   const total = Object.values(policy).reduce((sum, count) => sum + count, 0);
   rolePolicyStatus.textContent = message ?? `Required seats: ${total}/${template.capacity}. Remaining seats use fair rotation.`;
   rolePolicyStatus.className = `${kind} inline-status`;
+}
+
+function renderEventPolicy(message, kind = "muted") {
+  const template = currentTemplate();
+  eventPolicyFields.innerHTML = `
+    <label>Event name<input id="event-name" maxlength="80" value="${escapeHtml(template.eventName)}"></label>
+    <label>Main seats<input id="event-capacity" type="number" min="1" max="200" step="1" value="${template.capacity}"></label>
+    <label>Substitutes<input id="event-substitutes" type="number" min="0" max="200" step="1" value="${template.substituteCount}"></label>`;
+  eventPolicyStatus.textContent = message ?? template.scaleNote;
+  eventPolicyStatus.className = `${kind} inline-status`;
+}
+
+function applyEventPolicy() {
+  const game = gameSelect.value;
+  const next = structuredClone(eventSettings);
+  next[game] = {
+    eventName: document.querySelector("#event-name").value,
+    capacity: Number(document.querySelector("#event-capacity").value),
+    substituteCount: Number(document.querySelector("#event-substitutes").value),
+  };
+  try {
+    const validated = validateEventSettings(next, GAME_TEMPLATES);
+    rolePolicies = validateRolePolicies(rolePolicies, GAME_TEMPLATES, validated);
+    eventSettings = validated;
+    currentRoster = null;
+    attendanceButton.disabled = true;
+    updateTemplate();
+    persistState(`Event settings saved locally for ${currentTemplate().eventName}.`);
+    renderEventPolicy("Event settings saved. Generate again to apply them.", "success");
+  } catch (error) {
+    renderEventPolicy(`${error.message}. Event settings were not changed.`, "warning");
+  }
+}
+
+function resetEventPolicy() {
+  eventSettings[gameSelect.value] = defaultEventSettings(GAME_TEMPLATES)[gameSelect.value];
+  rolePolicies[gameSelect.value] = defaultRolePolicies(GAME_TEMPLATES)[gameSelect.value];
+  rolePolicies = validateRolePolicies(rolePolicies, GAME_TEMPLATES, eventSettings);
+  currentRoster = null;
+  attendanceButton.disabled = true;
+  updateTemplate();
+  persistState(`Sample event defaults restored for ${currentTemplate().label}.`);
+  renderEventPolicy("Sample event and role defaults restored.", "success");
 }
 
 function applyRolePolicy() {
@@ -284,7 +352,7 @@ function renderRoster() {
   });
   rosterPanel.innerHTML = `
     <div class="roster-head"><div><span class="eyebrow">Round ${round}</span><h2>${template.eventName} roster</h2></div><span class="pill">${currentRoster.main.length}/${template.capacity}</span></div>
-    <p class="scale-note ${template.scaleStatus === "estimate" ? "estimate" : ""}">${template.scaleNote}</p>
+    <p class="scale-note ${template.scaleStatus}">${template.scaleNote}</p>
     ${warnings}
     <div class="roster-grid">
       <section><h3>Main roster</h3><ol>${currentRoster.main.map((member) => memberCard(member, "main")).join("")}</ol></section>
@@ -339,13 +407,20 @@ function recordAttendance() {
 function updateTemplate() {
   const template = currentTemplate();
   eventTitle.textContent = `${template.label} · ${template.eventName}`;
+  heroEyebrow.textContent = `Built for ${template.label} alliance officers`;
+  heroTitle.textContent = `Run ${template.eventName} without rebuilding the roster.`;
+  heroLead.textContent = `Turn member availability into ${template.capacity} main seats and ${template.substituteCount} substitutes, then carry attendance and no-shows into the next round.`;
+  outcomeMembers.textContent = members.length || 50;
+  outcomeCapacity.textContent = `${template.capacity} + ${template.substituteCount}`;
+  outcomeRound.textContent = `Round ${members.length ? round : SAMPLE_ROUND + 1}`;
   currentRoster = null;
   attendanceButton.disabled = true;
   rosterPanel.innerHTML = members.length
     ? `<div class="empty"><span>${template.capacity} main · ${template.substituteCount} substitutes</span><strong>Select availability and generate the roster.</strong></div>`
-    : `<div class="empty"><span>Round ${round} · no saved state</span><strong>Import a roster CSV or restore the synthetic sample to begin.</strong><small class="scale-note ${template.scaleStatus === "estimate" ? "estimate" : ""}">${template.scaleNote}</small></div>`;
+    : `<div class="empty"><span>Round ${round} · no saved state</span><strong>Import a roster CSV or restore the synthetic sample to begin.</strong><small class="scale-note ${template.scaleStatus}">${template.scaleNote}</small></div>`;
   responseOutput.value = "";
   renderIntake();
+  renderEventPolicy();
   renderRolePolicy();
 }
 
@@ -386,6 +461,7 @@ function loadSample() {
   availabilityIds = new Set(members.map((member) => member.id));
   respondedIds = new Set();
   rolePolicies = defaultRolePolicies(GAME_TEMPLATES);
+  eventSettings = defaultEventSettings(GAME_TEMPLATES);
   round = SAMPLE_ROUND;
   csvInput.value = serializeRosterCsv(members);
   currentRoster = null;
@@ -419,6 +495,7 @@ function resetState() {
   availabilityIds = new Set();
   respondedIds = new Set();
   rolePolicies = defaultRolePolicies(GAME_TEMPLATES);
+  eventSettings = defaultEventSettings(GAME_TEMPLATES);
   round = EMPTY_ROUND;
   currentRoster = null;
   csvInput.value = "";
@@ -441,6 +518,8 @@ applyResponsesButton.addEventListener("click", applyMemberResponses);
 clearAvailabilityButton.addEventListener("click", clearAvailability);
 applyRolePolicyButton.addEventListener("click", applyRolePolicy);
 resetRolePolicyButton.addEventListener("click", resetRolePolicy);
+applyEventPolicyButton.addEventListener("click", applyEventPolicy);
+resetEventPolicyButton.addEventListener("click", resetEventPolicy);
 tryDemoButton.addEventListener("click", runQuickDemo);
 openSetupButton.addEventListener("click", openRosterSetup);
 signupBody.addEventListener("change", (event) => {
