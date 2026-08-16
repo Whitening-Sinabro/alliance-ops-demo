@@ -75,6 +75,11 @@ const rolePolicyFields = document.querySelector("#role-policy-fields");
 const applyRolePolicyButton = document.querySelector("#apply-role-policy");
 const resetRolePolicyButton = document.querySelector("#reset-role-policy");
 const rolePolicyStatus = document.querySelector("#role-policy-status");
+const tryDemoButton = document.querySelector("#try-demo");
+const openSetupButton = document.querySelector("#open-setup");
+const advancedSetup = document.querySelector("#advanced-setup");
+const rosterImport = document.querySelector("#roster-import");
+const rosterWorkspace = document.querySelector("#roster-workspace");
 
 function showStorageStatus(message, kind = "muted") {
   storageStatus.textContent = message;
@@ -115,10 +120,20 @@ function renderSignups() {
   if (members.length === 0) {
     signupBody.innerHTML = `<tr><td colspan="6" class="empty-row"><strong>No saved roster</strong><small>Import a CSV or restore the synthetic sample.</small></td></tr>`;
     generateButton.disabled = true;
+    generateButton.hidden = true;
+    attendanceButton.hidden = true;
+    resetButton.hidden = true;
+    rosterWorkspace.hidden = true;
+    tryDemoButton.textContent = "Try the 50-member demo";
     renderIntake();
     return;
   }
   generateButton.disabled = false;
+  generateButton.hidden = false;
+  attendanceButton.hidden = false;
+  resetButton.hidden = false;
+  rosterWorkspace.hidden = false;
+  tryDemoButton.textContent = "Generate the current roster";
   signupBody.innerHTML = members
     .map(
       (member) => `
@@ -382,6 +397,18 @@ function loadSample() {
   persistState(`Synthetic sample saved locally at round ${round}.`);
 }
 
+function runQuickDemo() {
+  if (members.length === 0) loadSample();
+  generateRoster();
+  document.querySelector("#roster-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function openRosterSetup() {
+  advancedSetup.open = true;
+  rosterImport.open = true;
+  rosterImport.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function resetState() {
   const result = clearState(storage);
   if (!result.ok) {
@@ -414,6 +441,8 @@ applyResponsesButton.addEventListener("click", applyMemberResponses);
 clearAvailabilityButton.addEventListener("click", clearAvailability);
 applyRolePolicyButton.addEventListener("click", applyRolePolicy);
 resetRolePolicyButton.addEventListener("click", resetRolePolicy);
+tryDemoButton.addEventListener("click", runQuickDemo);
+openSetupButton.addEventListener("click", openRosterSetup);
 signupBody.addEventListener("change", (event) => {
   const input = event.target.closest("[data-available]");
   if (!input) return;
@@ -431,9 +460,10 @@ updateTemplate();
 if (restoredState.status === "restored") {
   showStorageStatus(`Restored round ${round} · ${members.length} members from this browser.`, "success");
 } else if (restoredState.status === "invalid") {
+  resetButton.hidden = false;
   showStorageStatus(`Saved state is invalid: ${restoredState.error}. Clear it or import a roster.`, "warning");
 } else if (restoredState.status === "unavailable") {
   showStorageStatus("Browser storage is unavailable; changes will last only until refresh.", "warning");
 } else {
-  showStorageStatus("No saved state. Import a CSV or restore the synthetic sample.");
+  showStorageStatus("Start with the sample above, or use your own roster.");
 }
